@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link type="text/css" rel="stylesheet" href="file:///__BASE_PATH__/thirdparty/CodeMirror/lib/codemirror.css" />
+        <link type="text/css" rel="stylesheet" href="file:///__BASE_PATH__/styles/brackets.min.css" />
+        <link type="text/css" rel="stylesheet" href="file:///__BASE_PATH__/__CSS_FILE_HERE__" /> <!-- our theme styles will be loaded by this tag -->
+
+        <script src="file:///__BASE_PATH__/thirdparty/CodeMirror/lib/codemirror.js"></script>
+        <script src="file:///__BASE_PATH__/thirdparty/CodeMirror/mode/css/css.js"></script>
+    </head>
+
+    <body class="platform-win __DARK_HERE__">
+        <div id="editor-holder">
+            <!-- View Panes are programatically created here -->
+            <div class="view-pane active-pane" id="first-pane" style=
+            "height: 100%; width: 100%;">
+                <div class="pane-header" style="display: none;">
+                    index.html
+                </div>
+                <div class="pane-content">
+                    <div class="not-editor" style="display: none;"></div>
+                    <textarea id="demotext" style="display: none;">
+html {
+    background-color: #e6e9e9;
+    background-image: -webkit-linear-gradient(270deg,rgb(230,233,233) 0%,rgb(216,221,221) 100%);
+    background-image: linear-gradient(270deg,rgb(230,233,233) 0%,rgb(216,221,221) 100%);
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    margin: 0 auto;
+    padding: 2em 2em 4em;
+    max-width: 800px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5em;
+    color: #545454;
+    background-color: #ffffff;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.06);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #222;
+    font-weight: 600;
+    line-height: 1.3em;
+}
+
+h2 {
+    margin-top: 1.3em;
+}
+
+a {
+    color: #0083e8;
+}
+
+b, strong {
+    font-weight: 600;
+}
+
+samp {
+    display: none;
+}
+
+img {
+    -webkit-animation: colorize 2s cubic-bezier(0, 0, .78, .36) 1;
+    animation: colorize 2s cubic-bezier(0, 0, .78, .36) 1;
+    background: transparent;
+    border: 10px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    display: block;
+    margin: 1.3em auto;
+    max-width: 95%;
+}
+
+@-webkit-keyframes colorize {
+    0% {
+        -webkit-filter: grayscale(100%);
+    }
+    100% {
+        -webkit-filter: grayscale(0%);
+    }
+}
+
+@keyframes colorize {
+    0% {
+        filter: grayscale(100%);
+    }
+    100% {
+        filter: grayscale(0%);
+    }
+}
+
+                    </textarea>
+                </div>
+            </div>
+        </div>
+        <script>
+            var cm = CodeMirror.fromTextArea(document.getElementById("demotext"), {
+                addModeClass: __ADD_MODE_CLASS__,
+                lineNumbers: true,
+                mode: "css",
+                theme: "__THEME_NAME__"
+            });
+            cm.setSize(1920, 1080);
+        </script>
+    </body>
+</html>
