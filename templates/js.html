@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link type="text/css" rel="stylesheet" href="file:///__BASE_PATH__/thirdparty/CodeMirror/lib/codemirror.css" />
+        <link type="text/css" rel="stylesheet" href="file:///__BASE_PATH__/styles/brackets.min.css" />
+        <link type="text/css" rel="stylesheet" href="file:///__BASE_PATH__/__CSS_FILE_HERE__" /> <!-- our theme styles will be loaded by this tag -->
+
+        <script src="file:///__BASE_PATH__/thirdparty/CodeMirror/lib/codemirror.js"></script>
+        <script src="file:///__BASE_PATH__/thirdparty/CodeMirror/mode/javascript/javascript.js"></script>
+    </head>
+
+    <body class="platform-win __DARK_HERE__">
+        <div id="editor-holder">
+            <!-- View Panes are programatically created here -->
+            <div class="view-pane active-pane" id="first-pane" style=
+            "height: 100%; width: 100%;">
+                <div class="pane-header" style="display: none;">
+                    index.html
+                </div>
+                <div class="pane-content">
+                    <div class="not-editor" style="display: none;"></div>
+                    <textarea id="demotext" style="display: none;">
+    /**
+     * Removes this editor from the DOM and detaches from the Document. If this is the "master"
+     * Editor that is secretly providing the Document's backing state, then the Document reverts to
+     * a read-only string-backed mode.
+     */
+    Editor.prototype.destroy = function () {
+        this.trigger("beforeDestroy", this);
+
+        // CodeMirror docs for getWrapperElement() say all you have to do is "Remove this from your
+        // tree to delete an editor instance."
+        $(this.getRootElement()).remove();
+
+        _instances.splice(_instances.indexOf(this), 1);
+
+        // Disconnect from Document
+        this.document.releaseRef();
+        this.document.off("change", this._handleDocumentChange);
+        this.document.off("deleted", this._handleDocumentDeleted);
+        this.document.off("languageChanged", this._handleDocumentLanguageChanged);
+
+        if (this._visibleRange) {   // TextRange also refs the Document
+            this._visibleRange.dispose();
+        }
+
+        // If we're the Document's master editor, disconnecting from it has special meaning
+        if (this.document._masterEditor === this) {
+            this.document._makeNonEditable();
+        }
+
+        // Destroying us destroys any inline widgets we're hosting. Make sure their closeCallbacks
+        // run, at least, since they may also need to release Document refs
+        var self = this;
+        this._inlineWidgets.forEach(function (inlineWidget) {
+            self._removeInlineWidgetInternal(inlineWidget);
+        });
+    };
+
+    /**
+     * @private
+     * Handle any cursor movement in editor, including selecting and unselecting text.
+     * @param {!Event} event
+     */
+    Editor.prototype._handleCursorActivity = function (event) {
+        this._updateStyleActiveLine();
+    };
+
+    /**
+     * @private
+     * Removes any whitespace after one of ]{}) to prevent trailing whitespace when auto-indenting
+     */
+    Editor.prototype._handleWhitespaceForElectricChars = function () {
+        var self        = this,
+            instance    = this._codeMirror,
+            selections,
+            lineStr;
+
+        selections = this.getSelections().map(function (sel) {
+            lineStr = instance.getLine(sel.end.line);
+
+            if (lineStr && !/\S/.test(lineStr)) {
+                // if the line is all whitespace, move the cursor to the end of the line
+                // before indenting so that embedded whitespace such as indents are not
+                // orphaned to the right of the electric char being inserted
+                sel.end.ch = self.document.getLine(sel.end.line).length;
+            }
+            return sel;
+        });
+        this.setSelections(selections);
+    };
+
+    /**
+     * @private
+     * Handle CodeMirror key events.
+     * @param {!Event} event
+     */
+    Editor.prototype._handleKeypressEvents = function (event) {
+        var keyStr = String.fromCharCode(event.which || event.keyCode);
+
+        if (/[\]\{\}\)]/.test(keyStr)) {
+            this._handleWhitespaceForElectricChars();
+        }
+    };
+
+    /**
+     * @private
+     * Helper function for `_handleTabKey()` (case 2) - see comment in that function.
+     * @param {Array.<{start:{line:number, ch:number}, end:{line:number, ch:number}, reversed:boolean, primary:boolean}>} selections
+     *     The selections to indent.
+     */
+    Editor.prototype._addIndentAtEachSelection = function (selections) {
+        var instance = this._codeMirror,
+            usingTabs = instance.getOption("indentWithTabs"),
+            indentUnit = instance.getOption("indentUnit"),
+            edits = [];
+
+        _.each(selections, function (sel) {
+            var indentStr = "", i, numSpaces;
+            if (usingTabs) {
+                indentStr = "\t";
+            } else {
+                numSpaces = indentUnit - (sel.start.ch % indentUnit);
+                for (i = 0; i < numSpaces; i++) {
+                    indentStr += " ";
+                }
+            }
+            edits.push({edit: {text: indentStr, start: sel.start}});
+        });
+
+        this.document.doMultipleEdits(edits);
+    };
+
+    /**
+     * @private
+     * Helper function for `_handleTabKey()` (case 3) - see comment in that function.
+     * @param {Array.<{start:{line:number, ch:number}, end:{line:number, ch:number}, reversed:boolean, primary:boolean}>} selections
+     *     The selections to indent.
+     */
+    Editor.prototype._autoIndentEachSelection = function (selections) {
+        // Capture all the line lengths, so we can tell if anything changed.
+        // Note that this function should only be called if all selections are within a single line.
+        var instance = this._codeMirror,
+            lineLengths = {};
+        _.each(selections, function (sel) {
+            lineLengths[sel.start.line] = instance.getLine(sel.start.line).length;
+        });
+
+        // First, try to do a smart indent on all selections.
+        CodeMirror.commands.indentAuto(instance);
+
+        // If there were no code or selection changes, then indent each selection one more indent.
+        var changed = false,
+            newSelections = this.getSelections();
+        if (newSelections.length === selections.length) {
+            _.each(selections, function (sel, index) {
+                var newSel = newSelections[index];
+                if (CodeMirror.cmpPos(sel.start, newSel.start) !== 0 ||
+                        CodeMirror.cmpPos(sel.end, newSel.end) !== 0 ||
+                        instance.getLine(sel.start.line).length !== lineLengths[sel.start.line]) {
+                    changed = true;
+                    // Bail - we don't need to look any further once we've found a change.
+                    return false;
+                }
+            });
+        } else {
+            changed = true;
+        }
+
+        if (!changed) {
+            CodeMirror.commands.indentMore(instance);
+        }
+    };
+
+                    </textarea>
+                </div>
+            </div>
+        </div>
+        <script>
+            var cm = CodeMirror.fromTextArea(document.getElementById("demotext"), {
+                addModeClass: __ADD_MODE_CLASS__,
+                lineNumbers: true,
+                mode: "javascript",
+                theme: "__THEME_NAME__"
+            });
+            cm.setSize(1920, 1080);
+        </script>
+    </body>
+</html>
