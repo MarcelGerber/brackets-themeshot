@@ -4,6 +4,6 @@
     "version": "0.1.0",
     "dependencies": {
         "less": "2.5.0",
-        "spawn-sync": "1.0.5"
+        "spawn-sync": "1.0.6"
     }
 }

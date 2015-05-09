@@ -1,4 +1,4 @@
-# Brackets Themeshot
+# Brackets Themeshot [![Dependency Status](https://david-dm.org/MarcelGerber/brackets-themeshot.svg)](https://david-dm.org/MarcelGerber/brackets-themeshot)
 
 Creates screenshots of themes for Brackets.
 
