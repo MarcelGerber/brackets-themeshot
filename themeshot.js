@@ -43,7 +43,13 @@ dirs.forEach(function (dir) {
         return;
     }
 
-    var fileContent = fs.readFileSync(dir + "/" + fileName);
+    var fileContent;
+    try {
+        fileContent = fs.readFileSync(dir + "/" + fileName);
+    } catch (e) {
+        console.error("[ERROR] Could not access " + extensionName + "'s " + fileName);
+        return;
+    }
     console.log("Compiling. Extension: " + extensionName);
     less.render("#editor-holder {" + fileContent + "/**/\n}", function (e, output) {
         if (e) {
